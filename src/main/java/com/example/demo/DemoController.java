@@ -1,47 +1,45 @@
 package com.example.demo;
 
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-
-// @Controller
-// public class DemoController {
-// 	@RequestMapping(value="/", method=RequestMethod.GET)
-// 	public ModelAndView index(ModelAndView mav) {
-// 		mav.setViewName("index");
-// 		mav.addObject("msg", "お名前を入力してください");
-// 		return mav;
-// 	}
-
-// 	@RequestMapping(value="/", method=RequestMethod.POST)
-// 	public ModelAndView send(
-// 			@RequestParam("text1")String str,
-// 			ModelAndView mav) {
-// 		mav.setViewName("index");
-// 		mav.addObject("msg", "こんにちは" + str + "さん！");
-// 		mav.addObject("value", str);
-// 		return mav;
-// 	}
-// }
 
 @Controller
 public class DemoController {
+
+	@Autowired
+	UserRepository repos;
+
 	@GetMapping("/")
-	public ModelAndView index(ModelAndView mav) {
+	public ModelAndView index(@ModelAttribute("formModel") User user, ModelAndView mav) {
 		mav.setViewName("index");
-		mav.addObject("msg", "お名前を入力してください");
+		Iterable<User> list = repos.findAll();
+		mav.addObject("data", list);
 		return mav;
 	}
 
 	@PostMapping("/")
-	public ModelAndView send(
-			@RequestParam("text1")String str,
-			ModelAndView mav) {
-		mav.setViewName("index");
-		mav.addObject("msg", "こんにちは" + str + "さん！");
-		mav.addObject("value", str);
-		return mav;
+	@Transactional(readOnly = false)
+	public ModelAndView form(@ModelAttribute("formModel") User user, ModelAndView mav) {
+		repos.saveAndFlush(user);
+		return new ModelAndView("redirect:/");
+	}
+
+	@PostConstruct
+	public void init() {
+		// 初期データ作成
+		User user1 = new User();
+		user1.setName("島根　花子");
+		repos.saveAndFlush(user1);
+
+		user1 = new User();
+		user1.setName("大阪　太郎");
+		repos.saveAndFlush(user1);
 	}
 }
